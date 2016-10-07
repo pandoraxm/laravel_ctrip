@@ -1,0 +1,1069 @@
+//注册2.3js源文件
+
+function checkIsCNPhone(phoneNum) {
+    return (/^1([3578]\d{9}|4\d{9})$/).test(phoneNum);
+};
+
+function checkIsEmail(email) {
+    return (/^[^@\s]+@[^@\.\s]+(\.[^@\.\s]+)+$/).test(email);
+}
+
+//验证密码  8---20位，不能含有空格
+String.prototype.isPwd = function () {
+    return /^\S{8,20}$/.test(this);
+};
+/*
+测试密码强度
+*/
+function checkStrong(sPW) {
+    Modes = 0;
+    for (i = 0; i < sPW.length; i++) {
+        //测试每一个字符的类别并统计一共有多少种模式
+        Modes |= CharMode(sPW.charCodeAt(i));
+    }
+    return bitTotal(Modes);
+}
+
+function CharMode(iN) {
+    if (iN >= 48 && iN <= 57) return 1; //数字
+    if (iN >= 65 && iN <= 90) return 2; //大写字母
+    if (iN >= 97 && iN <= 122) return 4; //小写
+    else return 8; //特殊字符
+}
+
+function bitTotal(num) {
+    modes = 0;
+    for (i = 0; i < 4; i++) {
+        if (num & 1) modes++;
+        num >>>= 1;
+    }
+    return modes;
+}
+
+function errShow(obj, isShow, message) {
+    if (isShow) {
+        obj.css("display", "");
+        obj.html("<i></i>" + message);
+    }
+    else {
+        obj.css("display", "none");
+        obj.html("<i></i>" + message);
+    }
+}
+
+function setPwdStrong(type) {
+    $("#strongPwd1").removeClass();
+    $("#strongPwd2").removeClass();
+    $("#strongPwd3").removeClass();
+    switch (type) {
+        case 1:
+            {
+                $("#strongPwd1").addClass("curr");
+                break;
+            }
+        case 2:
+            {
+                $("#strongPwd1").addClass("curr");
+                $("#strongPwd2").addClass("curr"); break;
+            }
+        case 3:
+            {
+                $("#strongPwd1").addClass("curr");
+                $("#strongPwd2").addClass("curr");
+                $("#strongPwd3").addClass("curr"); break;
+            }
+        default: { break; }
+
+    }
+
+}
+
+var popupStatus = 0;
+var iframeSrc;
+var resultLevel;
+function loadPopup(o) {
+    if (popupStatus == 0) {
+        var windowWidth = document.documentElement.clientWidth;
+        var windowHeight = document.documentElement.clientHeight;
+        var popupHeight = $("#" + o).height();
+        var popupWidth = $("#" + o).width();
+        $("#backgroundPopup").css({
+            "opacity": "0.5"
+        });
+        $("#backgroundPopup").fadeIn("slow");
+        $("#" + o).fadeIn("slow");
+        popupStatus = 1;
+    }
+}
+
+function disablePopup() {
+    if (popupStatus == 1) {
+        $("#backgroundPopup").fadeOut("slow");
+        $(".base_pop").fadeOut("slow");
+        popupStatus = 0;
+    }
+}
+
+function centerPopup(o) {
+    var windowWidth = document.documentElement.clientWidth;
+    var windowHeight = document.documentElement.clientHeight;
+    var popupHeight = jQuery("#" + o).height();
+    var popupWidth = jQuery("#" + o).width();
+    $("#" + o).css({
+        "position": "absolute",
+        "top": windowHeight / 2 + document.documentElement.scrollTop + document.body.scrollTop - popupHeight / 2,
+        "left": windowWidth / 2 - popupWidth / 2
+    });
+    $("#backgroundPopup").css({
+        "height": windowHeight + document.documentElement.scrollTop
+    });
+}
+
+function popUp(o) {
+    centerPopup(o);
+    loadPopup(o);
+}
+
+//蒙版右上角的关闭按钮
+$(".pop_close").bind("click", function () {
+    disablePopup();
+})
+
+function checkMobile() {
+    var mobile = $("#mobilePhone").val();
+    if (mobile.length === 0 || mobile === "可用作登录名") {
+        errShow($("#errPhone"), false, "");
+        return false;
+    }
+    else if (mobile.length !== 0 && !checkIsCNPhone(mobile)) {
+        errShow($("#errPhone"), true, "请输入正确的手机号。");
+        errShow($("#errEmail"), false, "");
+        return false;
+    }
+    else {
+        errShow($("#errPhone"), false, "");
+        errShow($("#errEmail"), false, "");
+        return true;
+    }
+}
+
+function checkEmail(isblur) {
+    var email = $("#emailAddress").val();
+    if (email.length === 0 || email === "可用作登录名") {
+        errShow($("#errEmail"), false, "");
+        if (!isblur) {
+            if ($("#mobilePhone").val().length === 0 && inputMobile) {
+                errShow($("#errEmail"), true, "手机号或Email必须输入一项。");
+            }
+            else if (!inputMobile) {
+                errShow($("#errEmail"), true, "请输入Email");
+            }
+        }
+        return false;
+    }
+    else if (email.length !== 0 && !checkIsEmail(email)) {
+        errShow($("#errEmail"), true, "请输入正确的Email。");
+        //document.getElementById("emailAddress").focus();
+        return false;
+    }
+    else {
+        errShow($("#errEmail"), false, "");
+        return true;
+    }
+}
+
+function checkPwd(iskeup) {
+    var pwd = $("#userPassword").val();
+    if (iskeup) {
+        if (pwd.length === 0) {
+            errShow($("#errPassword"), true, "请设置登录密码。");
+            setPwdStrong(0)
+            return false;
+        }
+        else if (pwd.isPwd()) {
+            /*if (pwd.length >= 6 || checkStrong(pwd) == 1) { setPwdStrong(1); }
+            if (pwd.length > 6 && checkStrong(pwd) == 2) { setPwdStrong(2); }
+            if (pwd.length > 6 && checkStrong(pwd) >= 3) { setPwdStrong(3); }
+            */
+            var rs = window.pwdLevel(pwd);
+
+            if (rs == 1003) {
+                setPwdStrong(0);
+                return false;
+            } else {
+                switch (rs) {
+                    case 1000:  //weak
+                        setPwdStrong(1);
+                        break;
+                    case 1001:  //Strong 
+                        setPwdStrong(3);
+                        break;
+                    case 1002:  //Medium
+                        setPwdStrong(2);
+                        break;
+                }
+                errShow($("#errPassword"), false, "");
+                return true;
+            }
+        }
+        //        else {
+        //            //setPwdStrong(0);
+        //            errShow($("#errPassword"), true, "密码需为6-20个字符,由字母、数字和符号组成。");
+        //            return false;
+        //        }
+
+        return false;
+    }
+    else {
+        if (pwd.length === 0) {
+            errShow($("#errPassword"), true, "请设置登录密码。");
+            $("#userPassword1").css("display", "block");
+            $("#userPassword").css("display", "none");
+            setPwdStrong(0)
+            return false;
+        }
+        else if (pwd.isPwd()) {
+            //if (pwd.length >= 6 || checkStrong(pwd) == 1) setPwdStrong(1);
+            //if (pwd.length > 6 && checkStrong(pwd) == 2) setPwdStrong(2);
+            //if (pwd.length > 6 && checkStrong(pwd) >= 3) setPwdStrong(3);
+            var rs = window.pwdLevel(pwd);
+            if (rs == 1003) {
+                errShow($("#errPassword"), true, "密码过于简单，有被盗风险");
+                return false;
+            }
+            errShow($("#errPassword"), false, "");
+            var rePwd = $("#rePassword").val();
+            if (rePwd.length == 0) {
+                errShow($("#errRepwd"), false, "");
+            }
+            else
+                if (rePwd !== $("#userPassword").val()) {
+                    errShow($("#errRepwd"), true, "您两次输入的密码不一致。");
+                    return false;
+                }
+                else {
+                    errShow($("#errRepwd"), false, "");
+                    return true;
+                }
+            return true;
+        }
+        else {
+            //setPwdStrong(0);
+            errShow($("#errPassword"), true, "密码需为8-20个字符,由字母、数字和符号组成。");
+            return false;
+        }
+    }
+}
+
+function checkRePwd() {
+    var rePwd = $("#rePassword").val();
+    if (rePwd.length === 0) {
+        errShow($("#errRepwd"), true, "请再次输入密码");
+        $("#rePassword1").css("display", "block");
+        $("#rePassword").css("display", "none");
+        return false;
+    }
+    else if (rePwd !== $("#userPassword").val()) {
+        errShow($("#errRepwd"), true, "您两次输入的密码不一致。");
+        return false;
+    }
+    else {
+        errShow($("#errRepwd"), false, "");
+        return true;
+    }
+}
+
+function checkVerifyCode() {
+
+    var isNeedValidateCode = $("#hideNeedValidateCode").val();
+    if (isNeedValidateCode == "False") {//不需要验证验证码，通过验证
+        return true;
+    }
+
+    var verifyCode = $("#verifyCode").val();
+    if (verifyCode.length === 0) {
+        errShow($("#errVerifyCode"), true, "请输入验证码。");
+        return false;
+    }
+    /*var re = /^[a-z0-9A-Z]{4}$|^[a-z0-9A-Z]{6}$/;
+    if (!re.test(verifyCode)) {
+        errShow($("#errVerifyCode"), true, "请输入正确的验证码。");
+        return false;
+    }*/
+    errShow($("#errVerifyCode"), false, "");
+    return true;
+}
+
+/****************/
+
+$("#mobilePhone").bind("blur", function () {
+    //var pass = checkMobile();
+    //if (pass) {
+    refreshVerifyCode();
+    //}
+})
+
+$("#emailAddress").bind("blur", function () {
+    //var pass = checkEmail(true);
+    //if (pass) {
+    refreshVerifyCode();
+    //}
+})
+
+$("#emailAddress").bind("focus", function () {
+    EmailSuggest.setPos();
+})
+
+$("#userPassword").bind("blur", function () {
+    checkPwd(false);
+})
+
+$("#userPassword").bind("keyup", function () {
+    checkPwd(true);
+})
+
+$("#userPassword1").bind("focus", function () {
+    $("#userPassword1").css("display", "none");
+    $("#userPassword").css("display", "block");
+    document.getElementById("userPassword").focus();
+})
+
+$("#rePassword1").bind("focus", function () {
+    $("#rePassword1").css("display", "none");
+    $("#rePassword").css("display", "block");
+    document.getElementById("rePassword").focus();
+})
+
+$("#rePassword").bind("blur", function () {
+    checkRePwd();
+})
+
+$("#imgCode").bind("click", function () {
+    refreshVerifyCode();
+})
+
+$("#imgCode_ModifyPhone").bind("click", function () {
+    refreshVerifyCodeForModifyPhone();
+})
+
+$("#imgCode_ModifyEmail").bind("click", function () {
+    refreshVerifyCodeForModifyEmail();
+})
+
+function refreshVerifyCode() {
+    var phone = $("#mobilePhone").val();
+    var email = $("#emailAddress").val();
+
+    //兼容IE10以下版本
+    if (!!phone && phone === "可用作登录名")
+        phone = "";
+
+    if (!!email && email === "可用作登录名")
+        email = "";
+
+    errShow($("#errVerifyCode"), false, "");
+
+    if (!!phone || !!email) {
+        $.ajax({
+            'url': '../ajax/AjaxChkBWGAndVerifyCode.ashx',
+            'data': { 'email': email, 'phone': phone, st: !!phone ? "srs" : "rs", "rnd": Math.floor(Math.random() * 1000000) },
+            'async': false,
+            'success': function (result) {
+                var re = eval("(" + result + ")");
+                var retCode = re.Code;
+
+                if (retCode == 1) {
+                    $("#hideNeedValidateCode").val("True");
+                    var imgUrl = "data:image/gif;base64," + re.Image;
+                    $('#imgCode').attr("src", imgUrl);
+                    hidImgCodeHash.val(re.CaptchaId);
+                    if ($("#dl_VerifyCode").css("display") == "none") {
+                        $("#dl_VerifyCode").css("display", "block");
+                    }
+                } else {
+                    $("#dl_VerifyCode").css("display", "none");
+                    $("#hideNeedValidateCode").val("False");
+                }
+            }
+        });
+    } else {
+        $("#dl_VerifyCode").css("display", "none");
+    }
+}
+
+function refreshVerifyCodeForModifyPhone() {
+    var phone = $("#editMobileValue").val();
+
+    $("#verifyCode").val("");
+    errShow($("#errCode"), false, "");
+
+    if (!!phone && checkIsCNPhone(phone)) {
+        $.ajax({
+            'url': '../ajax/AjaxChkBWGAndVerifyCode.ashx',
+            'data': { 'phone': phone, st: "srs", "rnd": Math.floor(Math.random() * 1000000) },
+            'async': false,
+            'success': function (result) {
+                var re = eval("(" + result + ")");
+                var retCode = re.Code;
+
+                if (retCode == 1) {
+                    var imgUrl = "data:image/gif;base64," + re.Image;
+                    $('#imgCode_ModifyPhone').attr("src", imgUrl);
+                    $('#imgCode_ModifyPhone').attr("datahash", re.CaptchaId);
+                    if ($("#dl_VerifyCode").css("display") == "none") {
+                        $("#dl_VerifyCode").css("display", "block");
+                    }
+                } else {
+                    $("#dl_VerifyCode").css("display", "none");
+                }
+            }
+        });
+    } else {
+        $("#dl_VerifyCode").css("display", "none");
+    }
+}
+
+function refreshVerifyCodeForModifyEmail() {
+    var email = $("#editEmailValue").val();
+
+    $("#verifyCode").val("");
+    errShow($("#errCode"), false, "");
+
+    if (!!email && checkIsEmail(email)) {
+        $.ajax({
+            'url': '../ajax/AjaxChkBWGAndVerifyCode.ashx',
+            'data': { 'email': email, st: "rs", "rnd": Math.floor(Math.random() * 1000000) },
+            'async': false,
+            'success': function (result) {
+                var re = eval("(" + result + ")");
+                var retCode = re.Code;
+
+                if (retCode == 1) {
+                    var imgUrl = "data:image/gif;base64," + re.Image;
+                    $('#imgCode_ModifyEmail').attr("src", imgUrl);
+                    $('#imgCode_ModifyEmail').attr("datahash", re.CaptchaId);
+                    if ($("#dl_VerifyCode").css("display") == "none") {
+                        $("#dl_VerifyCode").css("display", "block");
+                    }
+                } else {
+                    $("#dl_VerifyCode").css("display", "none");
+                }
+            }
+        });
+    } else {
+        $("#dl_VerifyCode").css("display", "none");
+    }
+}
+
+function nextCode() {
+    $("#imgCode").click();
+}
+
+//$("#imgCode").click();
+
+$("#verifyCode").bind("blur", function () {
+    checkVerifyCode()
+})
+
+function showTos() {
+
+    document.getElementById("regprotocolTitle").innerHTML = staticMessage.registprotocolTitle;
+    document.getElementById("checkTos").innerText = staticMessage.registprotocolConfirm;
+    document.getElementById("regprotocolContent").innerHTML = staticMessage.registprotocolContent;
+
+    popUp("tos");
+    document.getElementById("tosCheckBox").checked = false;
+}
+
+function closeTos() {
+    disablePopup();
+    document.getElementById("tosCheckBox").checked = false;
+    reg_btnSubmit.addClass("reg_btn_disabled");
+    reg_btnSubmit.removeClass("reg_btn");
+}
+
+$("#checkTos").bind("click", function () {
+
+    disablePopup();
+    document.getElementById("tosCheckBox").checked = true;
+    reg_btnSubmit.removeClass("reg_btn_disabled");
+    reg_btnSubmit.addClass("reg_btn");
+
+
+    console.log(staticMessage.registprotocolTitle);
+});
+
+$("#tosCheckBox").bind("click", function () {
+    if (this.checked) {
+        reg_btnSubmit.removeClass("reg_btn_disabled");
+        reg_btnSubmit.addClass("reg_btn");
+    }
+    else {
+        reg_btnSubmit.addClass("reg_btn_disabled");
+        reg_btnSubmit.removeClass("reg_btn");
+    }
+})
+
+//检查注册按钮提交
+function checkRegist() {
+    $("#hidEmail").val("");
+    $("#hidPhone").val("");
+    $("#hidEmailValue").val("");
+    $("#hidMobilePhone").val("");
+    if (!$("#tosCheckBox").is(':checked')) {
+        return false;
+    }
+    //繁体版跳过手机检测
+    if (!inputMobile) {
+        if (!checkEmail() || ($("#emailAddress").val() === "可用作登录名")) {
+            errShow($("#errEmail"), true, "请输入Email");
+            document.getElementById("emailAddress").focus();
+            return false;
+        }
+    }
+        //简体版 手机email必填1项
+    else {
+        var checkMobil = checkMobile();
+        var checkEmai = checkEmail(false);
+        if (!checkMobil) {
+            if ($("#mobilePhone").val().length === 0 || $("#mobilePhone").val() === "可用作登录名") {
+                if (!checkEmai) {
+                    if ($("#emailAddress").val().length === 0 || $("#emailAddress").val() === "可用作登录名") {
+                        errShow($("#errEmail"), true, "手机号或Email必须输入一项。");
+                        document.getElementById("mobilePhone").focus();
+                        return false;
+                    }
+                    else {
+                        document.getElementById("emailAddress").focus();
+                        return false;
+                    }
+                }
+            }
+            else {
+                document.getElementById("mobilePhone").focus();
+                return false;
+            }
+
+        }
+        else if (!checkEmai) {
+            if ($("#emailAddress").val().length !== 0 && $("#emailAddress").val() !== "可用作登录名") {
+                document.getElementById("emailAddress").focus();
+                return false;
+            }
+        }
+        else {
+            errShow($("#errEmail"), false, "");
+        }
+    }
+
+    if (!checkPwd(true)) {
+        document.getElementById("userPassword1").focus();
+        return false;
+    }
+    if (!checkRePwd()) {
+        document.getElementById("rePassword1").focus();
+        return false;
+    }
+    if (!checkVerifyCode()) {
+        document.getElementById("verifyCode").focus();
+        return false;
+    }
+    if (ajaxCheckVerifyCode()) {
+        var mobilephone = $("#mobilePhone").val();
+        if (mobilephone !== "可用作登录名")
+        { $("#hidPhone").val(mobilephone); }
+        else {
+            $("#hidPhone").val("");
+        }
+
+        var email = $("#emailAddress").val();
+        if (email !== "可用作登录名") {
+            $("#hidEmail").val(email);
+        }
+        else {
+            $("#hidEmail").val("");
+        }
+        return true;
+    }
+    return false;
+}
+
+//ajax校验验证码
+function ajaxCheckVerifyCode() {
+
+    var isNeedValidateCode = $("#hideNeedValidateCode").val();
+    if (isNeedValidateCode == "False") {//不需要验证验证码，通过验证
+        return true;
+    }
+
+    if ($("#verifyCode").val().length === 0) {
+        errShow($("#errVerifyCode"), true, "请输入验证码。");
+        $("#imgCode").click();
+        return false;
+    }
+    else {
+        errShow($("#errVerifyCode"), false, "");
+        return true;
+    }
+}
+
+//邮箱注册提示
+function CheckEmailFromServer() {
+    if (hidEmailvalue != "0") {
+        $("#emailAddress").val(hidEmailvalue);
+    }
+    if (EmailRetcode == "1") {
+        errShow($("#errEmail"), true, "此Email已注册，请<a href=\"../login.aspx?email=" + hidEmailvalue + "\">直接登录></a>");
+    } else if (EmailRetcode == "2") {
+        errShow($("#errEmail"), true, "此Email已注册，完成验证后即可登录携程。<a href=\"register_email_setp2.aspx\">立即验证></a>");
+    }
+}
+
+//手机注册提示信息
+function CheckMobileFromServer() {
+    if (!inputMobile) {
+        return;
+    }
+    if (hidMobilePhone != "0") {
+        $("#mobilePhone").val(hidMobilePhone);
+    }
+    if (mobileRetcode == "1") {
+        EmailRetcode = 0;
+        $("#hidEmailRetcode").val("0");
+        errShow($("#errPhone"), true, "此手机号已注册，请<a href=\"../login.aspx?phone=" + hidMobilePhone + "\">直接登录></a>");
+    } else if (mobileRetcode == "2") {
+        EmailRetcode = 0;
+        $("#hidEmailRetcode").val("0");
+        errShow($("#errPhone"), true, "此手机号已注册，完成验证后即可登录携程。<a href=\"register_phone_setp2.aspx?action=v&phone=" + hidMobilePhone + "\" >立即验证></a>");
+    }
+}
+
+
+//****************************************** 邮箱验证页*********************
+
+function countDown(num, _fn, tag, str) {
+    var oTag;
+    if (f_ClearCountDown) return;
+    if (num == 0) {
+        if (tag != void 0) {
+            if (tag.val()) {
+                oTag = tag.val(num + (str != void 0 ? str : ""));
+            } else {
+                oTag = tag.html(num + (str != void 0 ? str : ""));
+            }
+        }
+        _fn();
+        return;
+    }
+    if (tag != void 0) {
+        if (tag.val()) {
+            oTag = tag.val(num + (str != void 0 ? str : ""));
+        } else {
+            oTag = tag.html(num + (str != void 0 ? str : ""));
+        }
+    }
+    var _self = function () {
+        countDown(--num, _fn, tag, str);
+    }
+    window.setTimeout(_self, 1000);
+}
+
+//倒数事件
+function countDownEmail(countSends) {
+    countDown(countSends, function () {
+        if ($("#reSend").val()) {
+            $("#reSend").val("重新发送邮件");
+        } else {
+            $("#reSend").html("重新发送邮件");
+        }
+        $("#reSend").addClass("btn03");
+        $("#reSend").removeClass("btn03_disabled");
+        $("#reSend").bind("click", function () { reSendEmail(); });
+    }, $("#reSend"), "s后可重新获取");
+}
+
+//倒数事件
+function countDownMobile(countSends) {
+    countDown(countSends, function () {
+        if ($("#reSendMobile").val()) {
+            $("#reSendMobile").val("重新获取验证码");
+        } else {
+            $("#reSendMobile").html("重新获取验证码");
+        }
+        $("#reSendMobile").addClass("btn03");
+        $("#reSendMobile").removeClass("btn03_disabled");
+        $("#reSendMobile").bind("click", function () { reSendMobile(); });
+    }, $("#reSendMobile"), "s后可重新获取");
+}
+
+//重发邮件
+function reSendEmail() {
+    //点击发送后按钮置灰取消事件
+    $("#reSend").unbind("click");
+    $("#reSend").addClass("btn03_disabled");
+    $("#reSend").removeClass("btn03");
+    //$("#reSend").html("正在发送邮件");
+    // Ajax发送邮件
+    var email = $("#hidEmail").val();
+    var uid = $("#hidUid").val();
+    var url = "../ajax/NewAjaxSendEmail.aspx?email=" + email + "&uid=" + uid + "&tmp=" + Math.round(Math.random() * 10000);
+    $.ajax(url, {
+        success: function (r) {
+            if (r === "T") {
+                //5秒后再倒数
+                $("#reSend").html("60s后可重新获取");
+                countDown(5, function () {
+                    countDownEmail(60);
+                });
+            }
+            else if (r === "H") {
+                $("#reSend").attr("title", "申请发送邮件次数已超限制，请24小时后重新申请。");
+            }
+            else {
+                //重发失败，或其他情况,已经验证成功
+                window.location.href = "registerMsg.aspx?msgType=3";
+
+            }
+        }
+    });
+}
+
+//重发短信
+function reSendMobile() {
+    //点击发送后按钮置灰取消事件
+    $("#reSendMobile").unbind("click");
+    $("#reSendMobile").addClass("btn03_disabled");
+    $("#reSendMobile").removeClass("btn03");
+    //$("#reSend").html("正在发送邮件");
+    // Ajax发送邮件
+    var phone = $("#hidMobile").val();
+    var uid = $("#hidUid").val();
+    var url = "../ajax/AjaxSendSMSNew.aspx?phone=" + phone + "&uid=" + uid + "&tmp=" + Math.round(Math.random() * 10000);
+    $.ajax(url, {
+        success: function (r) {
+            if (r === "T") {
+                $("#checkMobileCode").addClass("reg_btn");
+                $("#checkMobileCode").removeClass("reg_btn_disabled");
+                $("#checkMobileCode").bind("click", function () {
+                    checkMobileCode();
+                });
+                $("#reSendMobile").html("60s后可重新获取");
+                //5秒后再倒数
+                countDown(5, function () {
+                    countDownMobile(60);
+                });
+            }
+            else if (r === "H") {
+                $("#reSendMobile").attr("title", "申请发送短信次数已超限制，请24小时后重新申请。");
+            }
+            else {
+                disablePopup(); popUp("showMsg");
+                $("#reSendMobile").attr("title", "您已通过验证，无需再次获取");
+                $("#checkMobileCode").addClass("reg_btn_disabled");
+                $("#checkMobileCode").removeClass("reg_btn");
+                $("#checkMobileCode").attr("title", "您已通过验证");
+            }
+        }
+    });
+}
+
+//手机校验
+function checkMobileCode() {
+    $("#checkMobileCode").unbind("click");
+    $("#checkMobileCode").addClass("reg_btn_disabled");
+    $("#checkMobileCode").removeClass("reg_btn");
+    errShow($("#errMobileCode"), false, "");
+    var mobileCode = $("#mobileCode").val();
+    if (mobileCode.length === 0 || mobileCode === "验证码") {
+        errShow($("#errMobileCode"), true, "请输入验证码");
+        $("#checkMobileCode").bind("click", function () {
+            checkMobileCode();
+        });
+        $("#checkMobileCode").addClass("reg_btn");
+        $("#checkMobileCode").removeClass("reg_btn_disabled");
+    }
+    else if (mobileCode.length !== 6) {
+        errShow($("#errMobileCode"), true, "请输入正确的验证码");
+        $("#checkMobileCode").bind("click", function () {
+            checkMobileCode();
+        });
+        $("#checkMobileCode").addClass("reg_btn");
+        $("#checkMobileCode").removeClass("reg_btn_disabled");
+    }
+    else {
+        $.ajax("../ajax/ActiveRegistMobile.ashx?code=" + mobileCode + "&tmp=" + Math.round(Math.random() * 10000), {
+            success: function (r) {
+                if (r === "0") {
+                    window.location.href = "register_success.aspx";
+                }
+                else if (r === "2") {
+                    $("#checkMobileCode").bind("click", function () {
+                        checkMobileCode();
+                    });
+                    $("#checkMobileCode").addClass("reg_btn");
+                    $("#checkMobileCode").removeClass("reg_btn_disabled");
+                    errShow($("#errMobileCode"), true, "验证失败，请重新输入");
+                }
+                else if (r === "3") {
+                    disablePopup(); popUp("showMsg");
+                    errShow($("#errMobileCode"), true, "您已通过验证，无需再次提交。");
+                    $("#reSendMobile").attr("title", "您已通过验证，无需再次获取");
+                    $("#reSendMobile").unbind("click");
+                    $("#checkMobileCode").addClass("reg_btn_disabled");
+                    $("#checkMobileCode").removeClass("reg_btn");
+                    $("#reSendMobile").addClass("btn03_disabled");
+                    $("#reSendMobile").removeClass("btn03");
+                    //$("#checkMobileCode").unbind("click");
+                }
+                else if (r === "5") {
+                    //$("#checkMobileCode").unbind("click");
+                    errShow($("#errMobileCode"), true, "验证码已失效，请重新获取验证码。");
+                    return;
+                }
+                else if (r === "6") {
+                    //$("#checkMobileCode").unbind("click");
+                    errShow($("#errMobileCode"), true, "验证码输错次数已超限制，请重新获取验证码。");
+                    return;
+                }
+                else if (r === "7") {
+                    //$("#checkMobileCode").unbind("click");
+                    errShow($("#errMobileCode"), true, "验证码已失效，请重新获取验证码。");
+                    return;
+                }
+                else {
+                    $("#checkMobileCode").bind("click", function () {
+                        checkMobileCode();
+                    });
+                    $("#checkMobileCode").addClass("reg_btn");
+                    $("#checkMobileCode").removeClass("reg_btn_disabled");
+                    errShow($("#errMobileCode"), true, "验证失败。请稍后再试");
+                    return;
+                }
+            }
+        })
+
+    }
+}
+
+//检查邮箱是否是isp 常用邮箱地址
+function checkIsIspEmail(email) {
+    var source = "sina.com/163.com/126.com/qq.com/sina.cn/hotmail.com/gmail.com/sohu.com/yahoo.com/139.com/189.cn/yeah.net";
+    var arr = email.split("@");
+    var index = source.indexOf(arr[1]);
+    if (index == -1) {
+        return "0";
+    }
+    else if (arr[1] === "hotmail.com") {
+        return "http://mail.live.com/";
+    }
+    else if (arr[1] === "gmail.com") {
+        return "http://mail.google.com/";
+    }
+    else {
+        return "http://mail." + arr[1] + "/";
+    }
+}
+
+$("#editEmailValue").bind("blur", function () {
+    refreshVerifyCodeForModifyEmail();
+});
+
+$("#editMobileValue").bind("blur", function () {
+    refreshVerifyCodeForModifyPhone();
+});
+
+$("#editEmail").bind("click", function () {
+    $("#editEmailValue").val("");
+    popUp("eidtEmailWin");
+    errShow($("#errEditEmail"), false, "");
+})
+
+$("#editMobile").bind("click", function () {
+    $("#editMobileValue").val("");
+    popUp("editMobileWin");
+    errShow($("#errEditPhone"), false, "");
+})
+
+//取消按钮的事件
+$(".maskqx").bind("click", function () {
+    disablePopup();
+})
+
+$("#editEmailSubmit").bind("click", function () {
+    errShow($("#errEditEmail"), false, "");
+    errShow($("#errCode"), false, "");
+    var newEmail = $("#editEmailValue").val();
+    var verifycode = $("#verifyCode").val();
+    var captchaId = $("#imgCode_ModifyEmail").attr("datahash");
+    var regType = $("#regisType").val();
+    if (newEmail === $("#hidEmail").val() && regType === "1") {
+        errShow($("#errEditEmail"), true, "该Email与上一次输入的Email地址重复，请更换其他Email。");
+        return false;
+    }
+    if (newEmail.length === 0) {
+        errShow($("#errEditEmail"), true, "请输入Email。");
+        return false;
+    }
+    if (!checkIsEmail(newEmail)) {
+        errShow($("#errEditEmail"), true, "请输入正确的Email。");
+        return false;
+    }
+
+    if ($("#dl_VerifyCode").css("display") == "block") {
+        if (verifycode.length === 0) {
+            errShow($("#errCode"), true, "请输入验证码");
+            return false;
+        }
+    }
+
+    $.ajax("../ajax/UpdateEmailHandler.ashx?newmail=" + newEmail + "&captchaId=" + captchaId + "&verifyCode=" + verifycode + "&r=" + Math.round(Math.random() * 10000), {
+        success: function (ret) {
+            if (ret != "6" && ret != "7")
+                refreshVerifyCodeForModifyEmail();
+            //$("#verifyCode").val("");
+            switch (ret) {
+                case "0": { errShow($("#errEditEmail"), true, "系统错误,请稍后再试"); break; }
+                case "1": { errShow($("#errEditEmail"), true, "请输入Email。"); break; }
+                case "2": { errShow($("#errEditEmail"), true, "请输入正确的Email。"); break; }
+                case "3": { errShow($("#errEditEmail"), true, "该Email与上一次输入的Email地址重复，请更换其他Email。"); break; }
+                case "4": { errShow($("#errEditEmail"), true, "该Email已于其他账号绑定，请更换其他Email。"); break; }
+                case "5": { errShow($("#errEditEmail"), true, "该Email已于其他账号绑定，请更换其他Email。"); break; } //<a href=\"register_email_setp2.aspx\">立即验证></a>
+                case "6":
+                    {
+                        errShow($("#errEditEmail"), false, "");
+                        window.location.href = "register_email_setp2.aspx";
+                        break;
+                    }
+                case "7":
+                    {
+                        window.location.href = "registerMsg.aspx?msgType=3"; break;
+                    }
+                case "8": { errShow($("#errCode"), true, "请输入正确的验证码"); break; }
+                case "9": { errShow($("#errEditEmail"), true, "您的操作过于频繁，请24小时后再试。"); break; }
+                default: { errShow($("#errEditEmail"), true, "系统错误,请稍后再试"); break; }
+            }
+        }
+    })
+})
+
+//修改手机号码确认按钮
+$("#editPhoneSubmit").bind("click", function () {
+    errShow($("#errEditPhone"), false, "");
+    errShow($("#errCode"), false, "");
+    var newPhone = $("#editMobileValue").val();
+    var verifycode = $("#verifyCode").val();
+    var captchaId = $("#imgCode_ModifyPhone").attr("datahash");
+    var regType = $("#regisType").val();
+    if (newPhone === $("#hidMobile").val() && regType === "2") {
+        errShow($("#errEditPhone"), true, "该手机号码与上一次输入的手机号码重复，请更换其他手机号码。");
+        return false;
+    }
+    if (newPhone.length === 0) {
+        errShow($("#errEditPhone"), true, "请输入手机号码。");
+        return false;
+    }
+    if (!checkIsCNPhone(newPhone)) {
+        errShow($("#errEditPhone"), true, "请输入正确的手机号码。");
+        return false;
+    }
+    if ($("#dl_VerifyCode").css("display") == "block") {
+        if (verifycode.length === 0) {
+            errShow($("#errCode"), true, "请输入验证码");
+            return false;
+        }
+    }
+    $.ajax("../ajax/UpdatePhoneHandler.ashx?newmobile=" + newPhone + "&captchaId=" + captchaId + "&verifyCode=" + verifycode + "&r=" + Math.round(Math.random() * 10000), {
+        success: function (ret) {
+            if (ret != "6")
+                refreshVerifyCodeForModifyPhone();
+            //$("#verifyCode").val("");
+            switch (ret) {
+                case "0": { errShow($("#errEditPhone"), true, "系统错误,请稍后再试"); break; }
+                case "1": { errShow($("#errEditPhone"), true, "请输入手机号码。"); break; }
+                case "2": { errShow($("#errEditPhone"), true, "请输入正确的手机号码。"); break; }
+                case "3": { errShow($("#errEditPhone"), true, "该手机号码与上一次输入的手机号码重复，请更换其他手机号码。"); break; }
+                case "4": { errShow($("#errEditPhone"), true, "该手机号码已于其他账号绑定，请更换其他手机号码。"); break; }
+                case "5": { errShow($("#errEditPhone"), true, "该手机号码已于其他账号绑定，请更换其他手机号码。"); break; } //<a href=\"register_phone_setp2.aspx\">立即验证></a>
+                case "6":
+                    {
+                        errShow($("#errEditPhone"), false, "");
+                        window.location.href = "register_phone_setp2.aspx";
+                        break;
+                    }
+                case "7": { disablePopup(); popUp("showMsg"); break; }
+                case "8": { errShow($("#errCode"), true, "请输入正确的验证码"); break; }
+                case "9": { errShow($("#errEditPhone"), true, "您的操作过于频繁，请24小时后再试。"); break; }
+                default: { errShow($("#errEditPhone"), true, "系统错误,请稍后再试"); break; }
+            }
+
+        }
+    })
+})
+
+$("#BindNow").bind("click", function () {
+    $("#editEmail").val("");
+    errShow($("#errEditEmailSend"), false, "");
+    var email = $("#hidEmail").val();
+    if (email !== undefined && email.length !== 0) {
+        $("#editEmail").val(email);
+    }
+    popUp("editEmailSend");
+});
+
+$("#SendEmail").bind("click", function () {
+    errShow($("#errEditEmailSend"), false, "");
+    var email = $("#editEmail").val();
+    if (email.length === 0 || email === "请输入Email") {
+        errShow($("#errEditEmailSend"), true, "请输入Email。");
+    }
+    else if (!checkIsEmail(email)) {
+        errShow($("#errEditEmailSend"), true, "请输入正确的Email。");
+    }
+    else {
+        $("#hidEmail").val(email);
+        $.ajax("../ajax/SendBindEmailHandler.ashx?email=" + email + "&r=" + Math.round(Math.random() * 10000), {
+            success: function (r) {
+                switch (r) {
+                    case "1": { errShow($("#errEditEmailSend"), true, "请输入Email。"); break; }
+                    case "2": { errShow($("#errEditEmailSend"), true, "请输入正确的Email。"); break; }
+                    case "4": { errShow($("#errEditEmailSend"), true, "您输入的Email已被绑定。"); break; }
+                    case "5":
+                        {
+                            disablePopup();
+                            errShow($("#errEditEmailSend"), false, "");
+                            $("#hidEmailVal").html(email);
+                            popUp("emailSend");
+                            var isispEmail = checkIsIspEmail(email);
+                            if (isispEmail !== "0") {
+                                $("#jumpMail").css("display", "");
+                                $("#jumpMail").attr("href", isispEmail);
+                            }
+                            else {
+                                $("#jumpMail").css("display", "none");
+                            }
+                            break;
+                        }
+                    case "6":
+                        {
+                            disablePopup();
+                            errShow($("#errEditEmailSend"), false, "");
+                            $("#hidEmailVal").html(email);
+                            popUp("emailSend");
+                            var isispEmail = checkIsIspEmail(email);
+                            if (isispEmail !== "0") {
+                                $("#jumpMail").css("display", "");
+                                $("#jumpMail").attr("href", isispEmail);
+                            }
+                            else {
+                                $("#jumpMail").css("display", "none");
+                            }
+                            break;
+                        }
+                    default: { errShow($("#errEditEmailSend"), true, "系统异常，请稍后再试。"); break; }
+                }
+            }
+        });
+    }
+});
+
+

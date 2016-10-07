@@ -1,0 +1,31 @@
+<link rel="stylesheet" type="text/css" href="./homes/laydate/need/laydate.css">
+<script src="./homes/laydate/laydate.js" type="text/javascript"></script>
+开始日：<input class="laydate-icon" id="start" style="width:200px; margin-right:10px;">
+结束日：<input class="laydate-icon" id="end" style="width:200px;">
+<script>
+var start = {
+    elem: '#start',
+    format: 'YYYY/MM/DD',
+    min: laydate.now(), //设定最小日期为当前日期
+    max: laydate.now(+60), //最大日期
+    istime: true,
+    istoday: false,
+    choose: function(datas){
+         end.min = datas; //开始日选好后，重置结束日的最小日期
+         end.start = datas //将结束日的初始值设定为开始日
+    }
+};
+var end = {
+    elem: '#end',
+    format: 'YYYY/MM/DD',
+    min: laydate.now(),
+    max: laydate.now(+60),
+    istime: true,
+    istoday: false,
+    choose: function(datas){
+        start.max = datas; //结束日选好后，重置开始日的最大日期
+    }
+};
+laydate(start);
+laydate(end);
+</script>

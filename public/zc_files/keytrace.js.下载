@@ -1,0 +1,242 @@
+(function () {
+    var start = +new Date();
+    var collectHash = {};
+    var keyId = 300;
+    var keyIdHash = {};
+    var evtList = [];
+    var keyTypeHash = {
+        'keydown': 1,
+        'keyup': 2
+    };
+
+    var urlConfigForKeySend = {
+        "fat": "http://cdid.fat78.qa.nt.ctripcorp.com/Payment-CardRisk-DeviceWebSite/keytrace.aspx",
+        "uat": "http://cdid.fat78.qa.nt.ctripcorp.com/Payment-CardRisk-DeviceWebSite/keytrace.aspx",
+        "pro": "http://cdid.c-ctrip.com/Payment-CardRisk-DeviceWebSite/keytrace.aspx"
+    };
+
+
+    function mockKeyCode(keyCode) {
+        var ret = -1;
+        if (keyIdHash.hasOwnProperty(keyCode)) {
+            ret = keyIdHash[keyCode];
+        } else {
+            keyId++;
+            ret = keyId;
+            keyIdHash[keyCode] = keyId;
+        }
+        return ret;
+    }
+
+    function isAllowed(keyCode) {
+        var ret = false;
+        if (keyCode >= 48 && keyCode <= 57 || keyCode >= 65 && keyCode <= 90 || keyCode >= 96 && keyCode <= 107 || keyCode >= 109 && keyCode <= 111 || keyCode >= 186 && keyCode <= 192 || keyCode >= 219 && keyCode <= 222) {
+            ret = true;
+        }
+        return ret;
+    }
+    var jsonEncode = window.JSON && JSON.stringify ?
+	function (obj) {
+	    return JSON.stringify(obj);
+	} : function (obj) {
+	    var ret = 'null';
+	    if (obj === null || obj === void (0)) {
+	        ret = '' + obj;
+	    } else {
+	        switch (typeof obj) {
+	            case 'number':
+	                ret = obj.toString();
+	                break;
+	            case 'string':
+	                ret = '"' + obj.replace(/[\\\r\n\t\'\"]/g, function (a, b) {
+	                    return ({
+	                        '\r': '\\r',
+	                        '\n': '\\n',
+	                        '\t': '\\t',
+	                        '\\': '\\\\',
+	                        '\'': '\\\'',
+	                        '\"': '\\\"'
+	                    })[b];
+	                }) + '"';
+	                break;
+	            case 'array':
+	                var arr = [];
+	                for (var i = 0; i < obj.length; i++) {
+	                    arr.push(jsonEncode(obj[i]));
+	                }
+	                ret = '[' + arr.join(',') + ']';
+	                break;
+	            case 'object':
+	                var arr = [];
+	                for (var key in obj) {
+	                    if (obj.hasOwnProperty(key)) {
+	                        arr.push(jsonEncode(key) + ':' + jsonEncode(obj[key]));
+	                    }
+	                }
+	                ret = '{' + arr.join(',') + '}';
+	                break;
+	        }
+	    }
+	    return ret;
+	};
+
+    function evtHandler(e) {
+        e = e || event;
+        var src = e.target || e.srcElement;
+        if (!src) {
+            return;
+        }
+        var key = (src.tagName || '').toLowerCase() + '.' + (src.name || '');
+        if (!collectHash.hasOwnProperty(key)) {
+            return;
+        }
+        //		if (isAllowed(e.keyCode)) {
+        var d = {
+            'N': key, // name
+            'T': keyTypeHash[e.type] || e.type, // type
+            'MKC': isAllowed(e.keyCode) ? mockKeyCode(e.keyCode) : e.keyCode, // mockKeyCode
+            'SCA': '' + (e.shiftKey ? 1 : 0) + (e.ctrlKey ? 1 : 0) + (e.altKey ? 1 : 0), // shiftKey, ctrlKey, altKey
+            'TS': +new Date() - start // ts
+        };
+        evtList.push(d);
+        //		}
+    }
+    if (window.addEventListener) {
+        window.addEventListener('keydown', evtHandler, true);
+        window.addEventListener('keyup', evtHandler, true);
+    } else {
+        window.attachEvent('onkeydown', evtHandler);
+        window.attachEvent('onkeyup', evtHandler);
+    }
+    window.keyCollector = {};
+    keyCollector.define = function () {
+        for (var i = 0; i < arguments.length; i++) {
+            collectHash[arguments[i]] = 1;
+        }
+    };
+
+    function cleanEvtList() {
+        if (evtList.length) {
+            for (var key in collectHash) {
+                if (collectHash.hasOwnProperty(key)) {
+                    var arr = key.split('.');
+                    var els = document.getElementsByTagName(arr[0]);
+                    if (els) {
+                        for (var i = 0; i < els.length; i++) {
+                            if (els[i].name == arr[1]) {
+                                if (!els[i].value.length) {
+                                    for (var j = evtList.length - 1; j >= 0; j--) {
+                                        if (evtList[j].N == key) {
+                                            evtList.splice(j, 1);
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    setInterval(cleanEvtList, 200);
+    keyCollector.gzip = (function () {
+        function n(n) {
+            var t = 0, e = [], r = 0; this.next = function () {
+                if (0 == r) { if (t >= n.length) return null; var l = n.charCodeAt(t++); return 127 >= l ? l : 2047 >= l ? (e[1] = 128 | 63 & l, r = 1, 192 | l >> 6 & 31) : l >= 55296 && 57343 >= l ? (console.log("unsupported char code."), null) : (e[0] = 128 | l >> 6 & 63, e[1] = 128 | 63 & l, r = 2, 224 | l >> 12 & 15) } return e[e.length - r--]
+            } 
+        } function t(n) {
+            this.next = function () {
+                var t = n.next(); if (null == t) return null; if (t >> 7 == 0) return String.fromCharCode(2047 & t); if (t >> 5 == 6) { var e = n.next(); return e >> 6 != 2 && console.log("illegal utf-8 string."), String.fromCharCode((31 & t) << 6 | 63 & e) } if (t >> 4 == 14) {
+                    var e = n.next(), r = n.next(); return (e >> 6 != 2 || r >> 6 != 2) && console.log("illegal utf-8 string."), String.fromCharCode((15 & t) << 12 | (63 & e) << 6 | 63 & r)
+                } return console.log("unsupported char code: " + t), null
+            } 
+        } function e(n) {
+            function t(n) {
+                function t(n, t) { for (var e = 0, r = 0; h > r; r++) e = 131 * e + n[t + r]; return e } function e(n) { if (o.b.push(n), o.b.length > i && (o.b.shift(), o.h.shift()), o.b.length >= h) { var e = o.b.length - h; o.h[e] = t(o.b, e) } } for (var r, l, u, o = { b: [], h: [] }, c = [], s = 0; null != (r = n.next()); ) c.push(r);
+                this.next = function () {
+                    if (s < c.length - h + 1) { var n = t(c, s); l = 0, u = 0; for (var r = 0; r < o.h.length; r++) if (n == o.h[r]) { var i, a; for (i = r, a = s; i < o.b.length && a < c.length && !(o.b[i] != c[a] || a - s >= f); i++, a++); i - r >= u && i - r >= h && (u = i - r, l = r) } if (0 == u) { var g = [0, c[s]]; return e(c[s++]), g } return s += u, [u, o.b.length - (l + u)] } return s < c.length ? [0, c[s++]] : null
+                } 
+            } function e(n) {
+                for (var t, e = [], r = -1; null != (t = n.next()); ) if (0 == t[0]) (-1 == r || 255 == e[r]) && (e.push(128), r = e.length - 1), e.push(t[1]), e[r]++; else { r = -1, e.push(t[0]); var l = t[1]; if (127 >= l) e.push(l); else { for (var u = []; l > 0; ) u.push(127 & l), l >>= 7; for (var o = u.length - 1; o >= 0; o--) e.push(128 | u[o]); e[e.length - 1] &= 127 } } r = 0, this.next = function () {
+                    return r >= e.length ? null : e[r++]
+                } 
+            } var r = new e(new t(n)); this.next = function () { return r.next() } 
+        } function r(n) {
+            function t(n) { function t(n) { e.push(n), e.length > i && e.shift() } var e = [], r = 0, l = 0; this.next = function () { if (l > r) return e[r++]; var u = n.next(); return null == u ? null : 0 == u[0] ? (t(u[1]), u[1]) : (r = e.length - u[0] - u[1], l = e.length - u[1], e[r++]) } } function e(n) {
+                for (var t, e = [], r = 0; null != (t = n.next()); ) if (128 & t) for (var l = 127 & t, u = 0; l > u; u++) e.push([0, n.next()]);
+                else { var o, i = 0; do o = n.next(), i = i << 7 | 127 & o; while (128 & o); e.push([t, i]) } r = 0, this.next = function () { return r >= e.length ? null : e[r++] } 
+            } var r = new t(new e(n)); this.next = function () { return r.next() } 
+        } function l(n) {
+            var t = [], e = 0; this.next = function () {
+                if (e > 0) return t[4 - e--]; var r = [n.next(), n.next(), n.next()]; return null == r[0] ? null : (t[0] = c.charAt(r[0] >> 2), t[1] = c.charAt(null == r[1] ? r[0] << 4 & 63 : 63 & (r[0] << 4 | r[1] >> 4)), t[2] = null == r[1] ? "~" : c.charAt(null == r[2] ? r[1] << 2 & 63 : 63 & (r[1] << 2 | r[2] >> 6)), t[3] = null == r[2] ? "~" : c.charAt(63 & r[2]), e = 3, t[0])
+            } 
+        } function u(n) { var t = [], e = 0, r = 0; this.next = function () { if (e > 0) { var l = t[3 - e--]; return 256 > l ? l : null } if (r >= n.length) return null; var u = [s[n[r]], s[n[r + 1]], s[n[r + 2]], s[n[r + 3]]]; return t[0] = u[0] << 2 | u[1] >> 4, t[1] = 64 == u[2] ? 256 : (15 & u[1]) << 4 | u[2] >> 2, t[2] = 64 == u[3] ? 256 : (3 & u[2]) << 6 | u[3], e = 2, r += 4, t[0] } } for (var o = {}, i = 1024, f = 63, h = 3, c = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_", s = {}, a = 0; a < c.length; a++) s[c.charAt(a)] = a;
+        return s["~"] = 64, o.test = function (n) { var t = o.compress(n), e = o.decompress(t); console.log("encrypted: " + t), console.log("decrypted: " + e), console.log(e !== n ? "failed" : "OK!") }, o.testUCS = function (e) {
+            for (var r, l = new n(e), u = new t(l), o = []; null != (r = u.next()); ) o.push(r); var i = o.join(""); console.log(i), console.log(i !== e ? "failed" : "ok!")
+        }, o.compress = function (t) { for (var r, u = new n(t), o = new e(u), i = new l(o), f = []; null != (r = i.next()); ) f.push(r); return f.join("") }, o.decompress = function (n) { for (var e, l = new u(n), o = new r(l), i = new t(o), f = []; null != (e = i.next()); ) f.push(e); return f.join("") }, o
+    })();
+    keyCollector.send = function (url) {
+        cleanEvtList();
+        var data = {
+            'VER': '1.0',
+            'UID': '',
+            'ST': start,
+            'ED': +new Date(),
+            'MAPS': {},
+            'VALS': {},
+            'LENS': {},
+            'EVTS': evtList
+        };
+        var count = 0;
+        for (var key in collectHash) {
+            if (collectHash.hasOwnProperty(key)) {
+                data.MAPS[key] = count;
+                //				data.VALS[data.MAPS[key]]=null;
+                data.LENS[data.MAPS[key]] = null;
+                var arr = key.split('.');
+                var els = document.getElementsByTagName(arr[0]);
+                if (els) {
+                    for (var i = 0; i < els.length; i++) {
+                        if (els[i].name == arr[1]) {
+                            if (els[i].type.toLowerCase() != 'password') {
+                                data.VALS[data.MAPS[key]] = els[i].value || '';
+                            }
+                            data.LENS[data.MAPS[key]] = (els[i].value || '').length;
+                            break;
+                        }
+                    }
+                }
+                count++;
+            }
+        }
+        for (var i = 0; i < evtList.length; i++) {
+            evtList[i].N = data.MAPS[evtList[i].N];
+        }
+        
+        data.EVTS = evtList;
+        evtList = [];
+        var img = new Image();
+        img.src = url+'?source=' + keyCollector.gzip.compress(jsonEncode(data)) + '&rnd=' + Math.random();
+        var t = +new Date();
+        while (+new Date() - t < 200) { };
+    };
+
+    keyCollector.keySendByEnv = function () {
+        var url = "";
+        var host = window.location.host;
+
+        if (host.indexOf(".dev") >= 0 || host.indexOf("localhost") >= 0 ||
+            host.indexOf(".fat") >= 0 || host.indexOf(".fws") >= 0 )
+        {
+            url = urlConfigForKeySend.fat;
+        } else if (location.host.indexOf(".uat") >= 0) {
+            url = urlConfigForKeySend.uat;
+        } else {
+            url = urlConfigForKeySend.pro;
+        }
+
+        keyCollector.send(url);
+    };
+
+})();
