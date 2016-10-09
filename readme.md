@@ -7,48 +7,8 @@
 ###1.1前台主要功能有:前台用户登录注册,个人中心,用户资料修改,景点浏览,景点详情,线路规划,机票查询订购,火车票查询订购,首页广告轮播,攻略推荐,图片上墙,客服,天气等功能模块,.
 ###1.2后台主要功能有:后台商家登录,商家用户权限管理,首页轮播图管理,景点分类管理,景点管理,飞机票管理,火车票管理,数据分析生成统计图,文章管理,客服管理,前台用户管理.
 
-##2.数据字典库设计(举例)
-	机票字段
-	
-	CREATE TABLE `air` (
-	  `aid` int(255) UNSIGNED NOT NULL,
-	  `carrierCom` varchar(255) DEFAULT NULL,
-	  `flightCode` varchar(255) NOT NULL,
-	  `planeType` varchar(255) DEFAULT NULL,
-	  `departureTime` char(16) NOT NULL DEFAULT '' COMMENT 'aid',
-	  `arrivalTime` char(16) NOT NULL,
-	  `departureAirport` varchar(255) NOT NULL,
-	  `arrivalAirport` char(16) NOT NULL,
-	  `costTime` char(16) DEFAULT NULL,
-	  `planeMemo` decimal(6,2) NOT NULL,
-	  `correctness` varchar(255) DEFAULT NULL,
-	  `status` enum('1','2') NOT NULL DEFAULT '1',
-	  `startCity` varchar(255) NOT NULL,
-	  `endCity` varchar(255) NOT NULL,
-	  `cnt` int(32) DEFAULT NULL
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8;    
 
-
-	火车票字段
-	
-	CREATE TABLE `train` (
-	  `tid` int(11) NOT NULL,
-	  `trainCode` varchar(32) NOT NULL,
-	  `trainGrade` varchar(32) DEFAULT ' 动车组',
-	  `startStation` varchar(32) NOT NULL,
-	  `arriveStation` varchar(32) NOT NULL,
-	  `startTime` char(16) NOT NULL,
-	  `endTime` char(16) NOT NULL,
-	  `takeTime` char(16) DEFAULT NULL,
-	  `day_diff` varchar(32) DEFAULT NULL,
-	  `two_prc` int(6) NOT NULL,
-	  `one_prc` int(6) NOT NULL,
-	  `one_seat_cnt` int(6) NOT NULL,
-	  `two_seat_cnt` int(6) NOT NULL,
-	  `status` enum('1','2') NOT NULL DEFAULT '1'
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-##3.项目截图
+##2.项目截图
 
 ###前台首页
 ![前台首页](http://ww3.sinaimg.cn/mw690/658dc60bgw1f89qr0porsj210y1omni1.jpg"前台首页")
