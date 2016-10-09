@@ -11,7 +11,7 @@
 ##2.项目截图
 
 ###前台首页
-![前台首页](http://ww3.sinaimg.cn/mw690/658dc60bgw1f89qr0porsj210y1omni1.jpg"前台首页")
+![前台首页](https://github.com/pandoraxm/laravel_ctrip/blob/master/demo_img/%E5%89%8D%E5%8F%B0%E9%A6%96%E9%A1%B5.png"前台首页")
 
 ###景点列表页
 ![景点列表页](http://ww4.sinaimg.cn/mw690/658dc60bgw1f89qqynomhj210y0pwwp1.jpg"景点列表页")
