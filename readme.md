@@ -11,7 +11,7 @@
 ##2.项目截图
 
 ###前台首页
-![前台首页](https://github.com/pandoraxm/laravel_ctrip/blob/master/demo_img/%E5%89%8D%E5%8F%B0%E9%A6%96%E9%A1%B5.png"前台首页")
+![前台首页](https://github.com/pandoraxm/laravel_ctrip/blob/master/demo_img/%E5%89%8D%E5%8F%B0%E9%A6%96%E9%A1%B5.png)
 
 ###景点列表页
 ![景点列表页](http://ww4.sinaimg.cn/mw690/658dc60bgw1f89qqynomhj210y0pwwp1.jpg"景点列表页")
@@ -103,4 +103,5 @@ ________________________________________________________________________________
 
 ###客服管理
 ![客服管理](http://ww4.sinaimg.cn/mw690/658dc60bgw1f89sywhvrxj211g0j5juu.jpg"客服管理")
+
 
